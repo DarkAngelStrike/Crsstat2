@@ -1,44 +1,53 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Name: crsstat
-# Purpose: Oracle RAC CRS RESOURCE status checks
-# License: This is a FREE script and can be used as needed.
-# Any changes by users are not supported.
-# Notes: Script has been tested in "bash" and "ksh" only
+# Name:         crsstat
+# Purpose:      Oracle RAC CRS RESOURCE status checks
+# License:      This is a FREE script and can be used as needed.
+#               Any changes by users are not supported.
+# Notes:        Script has been tested in "bash" and "ksh" only
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Design: Sudhakar Kotagiri
-# Senior Oracle Exadata Consultant
+# Design:       Sudhakar Kotagiri
+#               Senior Oracle Exadata Consultant
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Usage: crsstat h
+# Usage:        crsstat h
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Change Log:
 # -------------------------------------------------------------------------
-# DATE Ver# NAME ACTION
+# DATE          Ver#    NAME                    ACTION
 # -------------------------------------------------------------------------
-# 01/21/2014 1.0 Sudhakar Kotagiri Design and Scripting
-# 04/19/2014 1.1 Sudhakar Kotagiri Added Color
-# 06/19/2014 2.0 Sudhakar Kotagiri Service Status Check Added
+# 01/21/2014    1.0     Sudhakar Kotagiri       Design and Scripting
+# 04/19/2014    1.1     Sudhakar Kotagiri       Added Color
+# 06/19/2014    2.0     Sudhakar Kotagiri       Service Status Check Added
+# 09/08/2017    3.0     Sudhakar Kotagiri       Updated to 12.1 Cluster
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # SETUP:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 1. Place script on a local/shared directory accessible on HOST
-# vi crsstat
+#    vi crsstat
 # 2. Update GRID_HOME in this Script under "MODIFY AS NEEDED"
-# vi ./crsstat
-# GRID_HOME=<grid_home>
+#    vi ./crsstat
+#    GRID_HOME=<grid_home>
 # 3. Change execution privileges
-# chmod 777 ./crsstat
+#    chmod 777 ./crsstat
 # 4. Setup and export PATH to setup ENVIRONMENT
-# i.e. SCRIPT LOCATION: /u01/SCRIPTS/crsstat # User Defined Location
-# export PATH=$PATH:/u01/SCRIPTS
-# which crsstat # should display the crsstat location
+#    i.e. SCRIPT LOCATION:      /u01/SCRIPTS/crsstat # User Defined Location
+#         export PATH=$PATH:/u01/SCRIPTS
+#         which crsstat         # should display the crsstat location
 # 5. SCRIPT HELP
-# crsstat h
+#         crsstat h
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~ SAMPLE ENV SCRIPY~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# # SCRIPT NAME: grid_env
+# export ORACLE_HOME=$GRID_HOME
+# export PATH=$ORACLE_HOME/bin:$BASE_PATH
+#
+# export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib
+# export CLASSPATH=$ORACLE_HOME/JRE:$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ********* ENV VARIABLES *********
 # MODIFY AS NEEDED ................
 # *********************************
-GRID_HOME=/u01/app/12.1.0/grid/
+GRID_HOME=/u01/app/12.1.0.2/grid
 
 
 # *********** ENVIRONMENT VARIABLES ******************************************************
@@ -47,40 +56,26 @@ GRID_HOME=/u01/app/12.1.0/grid/
 # Do NOT MODIFY....................
 
 # SCRIPT_TYPE:CODE
-# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS :: crsstat h|res|<resource_type>
-# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS :: crsstat h # Display Help
-# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS :: crsstat res # List All Resource Types
-# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS :: crsstat database # Display Resource Output (also be a part of string i.e. data)
-# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS :: crsstat # Display FULL Output
+# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS           ::     crsstat h|res|<resource_type>     # ALL OPTIONS
+# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS           ::     crsstat h                         # Display Help
+# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS           ::     crsstat res                       # List All Resource Types
+# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS           ::     crsstat database                  # Display Resource Output (also be a part of string i.e. data)
+# HELP:CODE:ORACLE RAC CRS RESOURCE STATUS           ::     crsstat                           # Display FULL Output
 
 
 # ********* ENV VARIABLES *********
 # Do NOT MODIFY....................
 # Ensure Environment $PATH Variable is set correctly
 
-AWKCMD=`which awk`;
-GREPCMD=`which egrep`;
-SEDCMD=`which sed`;
-CATCMD=`which cat`;
-WCCMD=`which wc`;
-TRCMD=`which tr`;
-SORTCMD=`which sort`;
-ECHOCMD=`which echo`;
-PRINTFCMD=`which printf`;
-COLUMNCMD=`which column`;
-
-# ********* ENV VARIABLES *********
-# Do NOT MODIFY....................
-
 TODAY=`date`;
-ORACLE_USER=`ls -alr ${GRID_HOME}/bin/sqlplus | ${AWKCMD} '{print $3}'`;
+ORACLE_USER=`ls -alr ${GRID_HOME}/bin/sqlplus | awk '{print $3}'`;
 PATH_SET=${PATH};
 
 # *********** COLOR CONTRAST ***********
 # Change DISPLAY COLOR CODE for LOOK and FEEL..
 # Keep the Format the same as "nnnm"...........
 # NOTE: COLOR CODE's are available online SEARCH for "SHELL COLOR CODES"...
-# KEEP COLOR options to FOREGROUND TEXT only
+#       KEEP COLOR options to FOREGROUND TEXT only
 
 HEADER_COLR='34m';
 TRAILER_COLR='34m';
@@ -95,7 +90,7 @@ SHELL_PROMPT_COLR='37m';
 
 binary_setup()
 {
-CRS_VERSION=`${GRID_HOME}/OPatch/opatch lsinventory | ${GREPCMD} "Oracle Database" | tail -1 | ${AWKCMD} '{print $(NF-0)}'`;
+        CRS_VERSION=`${GRID_HOME}/OPatch/opatch lsinventory | egrep "Oracle Database" | tail -1 | awk '{print $(NF-0)}'`;
 }
 
 crsstat()
@@ -105,205 +100,196 @@ CHECK_RESOURCE=$1;
 
 if [[ -z ${CHECK_RESOURCE} ]]
 then
-CHECK_RESOURCE='';
+        CHECK_RESOURCE='';
 else
-CHECK_RESOURCE=$1;
+        CHECK_RESOURCE=$1;
 fi;
 
 if [[ ${CHECK_RESOURCE} = 'h' ]]
 then
-${PRINTFCMD} "\e[${HEADER_COLR}\n";
-${ECHOCMD} "######################################################################################################";
-${PRINTFCMD} "#######################################";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} " CRSSTAT HELP ";
-${PRINTFCMD} "\e[${HEADER_COLR}";
-${PRINTFCMD} "#################################################\n";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} "DATE:\t${TODAY} ";
-${PRINTFCMD} "\e[${HEADER_COLR} \n";
-${ECHOCMD} "######################################################################################################";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} "COLOR CODES:";
-${PRINTFCMD} "\e[${HEADER_COLR}";
-${PRINTFCMD} " \e[${TAB_HEAD_COLR}HEADER\e[${HEADER_COLR} ";
-${PRINTFCMD} " \e[${TAB_TEXT_COLR}CONTENT\e[${TAB_TEXT_COLR} ";
-${PRINTFCMD} " \e[${ALRT_COLR}ALERT\e[${ALRT_COLR} ";
-${PRINTFCMD} " \e[${DB_INST_COLR}ORACLE_SID\e[${TRAILER_COLR} \n";
-${ECHOCMD} "######################################################################################################";
-${PRINTFCMD} "\e[${TAB_TEXT_COLR}\n";
-${CATCMD} $0 | ${GREPCMD} "HELP:" | ${GREPCMD} -v "GREPCMD" | ${SEDCMD} 's/^.*crsstat/crsstat/g';
-${PRINTFCMD} "\e[${TRAILER_COLR}\n";
-${ECHOCMD} "###################################################################################################### ";
+        printf "\e[${HEADER_COLR}\n";
+        echo "######################################################################################################";
+        printf "#######################################";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf " CRSSTAT HELP ";
+        printf "\e[${HEADER_COLR}";
+        printf "#################################################\n";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf "DATE:\t${TODAY} ";
+        printf "\e[${HEADER_COLR} \n";
+        echo "######################################################################################################";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf "COLOR CODES:";
+        printf "\e[${HEADER_COLR}";
+        printf " \e[${TAB_HEAD_COLR}HEADER\e[${HEADER_COLR} ";
+        printf " \e[${TAB_TEXT_COLR}CONTENT\e[${TAB_TEXT_COLR} ";
+        printf " \e[${ALRT_COLR}ALERT\e[${ALRT_COLR} ";
+        printf " \e[${DB_INST_COLR}ORACLE_SID\e[${TRAILER_COLR} \n";
+        echo "######################################################################################################";
+        printf "\e[${TAB_TEXT_COLR}\n";
+        cat $0 | egrep "HELP:" | egrep -v "GREPCMD" | sed 's/^.*crsstat/crsstat/g';
+        printf "\e[${TRAILER_COLR}\n";
+        echo "###################################################################################################### ";
 
-${PRINTFCMD} "\e[${SHELL_PROMPT_COLR}";
+        printf "\e[${SHELL_PROMPT_COLR}";
 
 fi;
 
 if [[ ${CHECK_RESOURCE} = 'res' ]]
 then
 
-V_RESOURCE_TYPE=`${GRID_HOME}/bin/crsctl status resource -p | \
-${GREPCMD} "^NAME|^TYPE\=|^GEN_USR_ORA_INST_NAME@SERVERNAME|^VERSION=|^SERVICE_NAME=|DESCRIPTION=" | \
-${SEDCMD} 's/^/|/g' | ${SEDCMD} 's/$/|/g' | \
-${TRCMD} "\n" " " | ${SEDCMD} 's/| |/|/g' | \
-${SEDCMD} 's/| $//g' | \
-${SEDCMD} 's/|NAME/\n|NAME/g' | \
-${SEDCMD} 's/TYPE=ora./TYPE=/g' | ${SEDCMD} 's/.type//g' | \
-${SORTCMD} -t'|' -k3 | \
-${SEDCMD} '/^$/d' | \
-${SEDCMD} 's/GEN_USR_ORA_INST_NAME\@SERVERNAME//g' | \
-${SEDCMD} "s/TYPE=//g;s/DESCRIPTION=//g" | \
-${SEDCMD} 's/|!!!|/|NA|/g' | \
-${SEDCMD} 's/$/!!!/g' | \
-${AWKCMD} -F\| '{print "|"$3"|"$4"|!!!"}' | \
-${SEDCMD} 's/|!!!|/|NO DESCRIPTION|/g' | \
-${SEDCMD} 's/\"//g' | \
-${SORTCMD} -u`;
+        V_RESOURCE_TYPE=`${GRID_HOME}/bin/crsctl status resource -p | egrep "^NAME|^TYPE=|DESCRIPTION" |\
+                        sed -e 'N;N;s/\n/ /g' |\
+                        sed 's/$/!!!/' |\
+                        sed 's/^NAME=//g' |\
+                        sed 's/TYPE=/|/g' |\
+                        sed 's/ DESCRIPTION=/|/g' |\
+                        sort -u`;
+                        #sed s'/ora.//' |\
+                        #sed s'/.type//' |\
 
-V_CRSP_COL_NAME='|RESOURCE_TYPE|DESCRIPTION|!!!';
-V_CRSP_COL_LINE='|-------------|-----------|!!!';
+        V_CRSP_COL_NAME='RESOURCE_NAME|RESOURCE_TYPE|DESCRIPTION|!!!';
+        V_CRSP_COL_LINE='-------------|-------------|-----------|!!!';
 
-${PRINTFCMD} "\e[${HEADER_COLR}\n";
-${ECHOCMD} "######################################################################################################";
-${PRINTFCMD} "####################################";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} " CRSSTAT RESOURCE LIST ";
-${PRINTFCMD} "\e[${HEADER_COLR}";
-${PRINTFCMD} "###########################################\n";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} "DATE:\t${TODAY} ";
-${PRINTFCMD} "\e[${HEADER_COLR} \n";
-${ECHOCMD} "######################################################################################################";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} "COLOR CODES:";
-${PRINTFCMD} "\e[${HEADER_COLR}";
-${PRINTFCMD} " \e[${TAB_HEAD_COLR}HEADER\e[${HEADER_COLR} ";
-${PRINTFCMD} " \e[${TAB_TEXT_COLR}CONTENT\e[${TAB_TEXT_COLR} ";
-${PRINTFCMD} " \e[${ALRT_COLR}ALERT\e[${ALRT_COLR} ";
-${PRINTFCMD} " \e[${DB_INST_COLR}ORACLE_SID\e[${TRAILER_COLR} \n";
-${ECHOCMD} "######################################################################################################";
-V_RESOURCE_TYPE=`${ECHOCMD} ${V_CRSP_COL_NAME} ${V_CRSP_COL_LINE} ${V_RESOURCE_TYPE}`;
-${PRINTFCMD} "\e[${TAB_TEXT_COLR}\n";
-${ECHOCMD} ${V_RESOURCE_TYPE} | \
-${SEDCMD} 's/[ ]\+|/|/g' | \
-${SEDCMD} 's/!!!/\n/g' | \
-${COLUMNCMD} -s"|" -t;
-${PRINTFCMD} "\e[${TRAILER_COLR}\n";
-${ECHOCMD} "###################################################################################################### ";
-${ECHOCMD} "###################################################################################################### ";
+        printf "\e[${HEADER_COLR}\n";
+        echo "######################################################################################################";
+        printf "####################################";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf " CRSSTAT RESOURCE LIST ";
+        printf "\e[${HEADER_COLR}";
+        printf "###########################################\n";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf "DATE:\t${TODAY} ";
+        printf "\e[${HEADER_COLR} \n";
+        echo "######################################################################################################";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf "COLOR CODES:";
+        printf "\e[${HEADER_COLR}";
+        printf " \e[${TAB_HEAD_COLR}HEADER\e[${HEADER_COLR} ";
+        printf " \e[${TAB_TEXT_COLR}CONTENT\e[${TAB_TEXT_COLR} ";
+        printf " \e[${ALRT_COLR}ALERT\e[${ALRT_COLR} ";
+        printf " \e[${DB_INST_COLR}ORACLE_SID\e[${TRAILER_COLR} \n";
+        echo "######################################################################################################";
+        V_RESOURCE_TYPE=`echo ${V_CRSP_COL_NAME} ${V_CRSP_COL_LINE} ${V_RESOURCE_TYPE}`;
+        printf "\e[${TAB_TEXT_COLR}\n";
+        echo ${V_RESOURCE_TYPE} |\
+        sed -e 's/!!! /\n/g' -e 's/!!!/\n/g' |\
+        column -s"|" -t;
+        printf "\e[${TRAILER_COLR}\n";
+        echo "###################################################################################################### ";
+        echo "###################################################################################################### ";
 
-${PRINTFCMD} "\e[${SHELL_PROMPT_COLR}";
+        printf "\e[${SHELL_PROMPT_COLR}";
 
 elif [[ ${CHECK_RESOURCE} != 'h' ]]
 then
 
-V_CRSP=`${GRID_HOME}/bin/crsctl status resource -p | \
-${GREPCMD} "^NAME|^TYPE\=|^GEN_USR_ORA_INST_NAME@SERVERNAME|^VERSION=|^SERVICE_NAME=|SERVER_POOLS=" | \
-${SEDCMD} 's/^/|/g' | ${SEDCMD} 's/$/|/g' | \
-${TRCMD} "\n" " " | ${SEDCMD} 's/| |/|/g' | \
-${SEDCMD} 's/| $//g' | \
-${SEDCMD} 's/|NAME/\n|NAME/g' | \
-${SEDCMD} 's/TYPE=ora./TYPE=/g' | ${SEDCMD} 's/.type//g' | \
-${SORTCMD} -t'|' -k3 | \
-${SEDCMD} '/^$/d' | \
-${SEDCMD} 's/GEN_USR_ORA_INST_NAME\@SERVERNAME//g' | \
-${SEDCMD} 's/$/!!!/g' | \
-${GREPCMD} "${CHECK_RESOURCE}"`;
+                #egrep "^NAME|^TYPE\=|^GEN_USR_ORA_INST_NAME@SERVERNAME|^VERSION=|^SERVICE_NAME=|SERVER_POOLS=" |\
+        V_CRSP=`${GRID_HOME}/bin/crsctl status resource -p |\
+                egrep "^NAME|^TYPE\=|^GEN_USR_ORA_INST_NAME@SERVERNAME|^SERVICE_NAME=|SERVER_POOLS=" |\
+                sed 's/^/|/g' | sed 's/$/|/g' |\
+                tr "\n" " " | sed 's/| |/|/g' |\
+                sed 's/| $//g' |\
+                sed 's/|NAME/\n|NAME/g' |\
+                sed 's/TYPE=ora./TYPE=/g' | sed 's/.type//g' |\
+                sort -t'|' -k3  |\
+                sed '/^$/d' |\
+                sed 's/GEN_USR_ORA_INST_NAME\@SERVERNAME//g' |\
+                sed 's/$/!!!/g' |\
+                egrep "${CHECK_RESOURCE}"`;
 
-V_CRSV=`${GRID_HOME}/bin/crsctl status resource -v | \
-${GREPCMD} "^NAME=|^TYPE=|^LAST_RESTART=|^STATE=|^TARGET=|^INTERNAL_STATE=" | \
-${SEDCMD} 's/^/|/g' | ${SEDCMD} 's/$/|/g' | \
-${TRCMD} "\n" " " | ${SEDCMD} 's/| |/|/g' | \
-${SEDCMD} 's/|NAME/\n|NAME/g' | \
-${SEDCMD} 's/TYPE=ora./TYPE=/g' | ${SEDCMD} 's/.type//g' | \
-${SORTCMD} -t'|' -k3 | \
-${SEDCMD} '/^$/d' | \
-${SEDCMD} 's/$/!!!|/g' | \
-${GREPCMD} "${CHECK_RESOURCE}"`;
+        V_CRSV=`${GRID_HOME}/bin/crsctl status resource -v |\
+                egrep "^NAME=|^TYPE=|^LAST_RESTART=|^STATE=|^TARGET=|^INTERNAL_STATE=" |\
+                sed 's/^/|/g' | sed 's/$/|/g' |\
+                tr "\n" " " | sed 's/| |/|/g' |\
+                sed 's/|NAME/\n|NAME/g' |\
+                sed 's/TYPE=ora./TYPE=/g' | sed 's/.type//g' |\
+                sort -t'|' -k3  |\
+                sed '/^$/d' |\
+                sed 's/$/!!!|/g' |\
+                egrep "${CHECK_RESOURCE}"`;
 
-# Database RESOURCES
+        # Database RESOURCES
 
-for resource in `${ECHOCMD} ${V_CRSP}`
-do
+        for resource in `echo ${V_CRSP}`
+        do
 
-V_NAME=`${ECHOCMD} ${resource} | ${AWKCMD} -F \| '{print $2}'`;
-V_TYPE=`${ECHOCMD} ${resource} | ${AWKCMD} -F \| '{print $3}'`;
-V_VERSION=`${ECHOCMD} ${resource} | ${AWKCMD} -F\| '{print $NF}' | ${SEDCMD} 's/!!!//g'`;
-V_RESOURCE=`${ECHOCMD} ${resource} | ${SEDCMD} 's/|'${V_NAME}'//g' | ${SEDCMD} 's/|'${V_TYPE}'//g' | ${SEDCMD} 's/'${V_VERSION}'//g'`;
-V_ORIGINAL=`${ECHOCMD} ${V_CRSV} | ${SEDCMD} 's/!!!|/\n/g' | ${GREPCMD} ${V_NAME}`;
-V_REPLACE=`${ECHOCMD} ${V_ORIGINAL}`;
+                V_NAME=`echo ${resource} | awk -F \| '{print $2}'`;
+                V_TYPE=`echo ${resource} | awk -F \| '{print $3}'`;
+                V_RESOURCE=`echo ${resource} | sed 's/|'${V_NAME}'//g' | sed 's/|'${V_TYPE}'//g'`;
+                V_ORIGINAL=`echo ${V_CRSV} | sed 's/!!!|/\n/g' | egrep ${V_NAME}`;
+                V_REPLACE=`echo ${V_ORIGINAL}`;
 
-if [[ `${ECHOCMD} ${V_REPLACE} | ${GREPCMD} "asm|database" | ${WCCMD} -l` -gt 0 ]]
-then
-for v_host_inst in `${ECHOCMD} ${V_RESOURCE} | ${SEDCMD} 's/|/ /g' | ${SEDCMD} 's/!!!//g'`
-do
-HOST_NAME=`${ECHOCMD} ${v_host_inst} | ${SEDCMD} 's/=/ /g' | ${SEDCMD} "s/(//g;s/)//g" | ${AWKCMD} '{print $1}'`;
-INST_NAME=`${ECHOCMD} ${v_host_inst} | ${SEDCMD} 's/=/ /g' | ${AWKCMD} '{print $2}'`;
-V_REPLACE=`${ECHOCMD} ${V_REPLACE} | ${SEDCMD} -e 's/'${HOST_NAME}'/'${HOST_NAME}' \('${INST_NAME}'\)/g'`;
-done;
-V_REPLACE=`${ECHOCMD} ${V_REPLACE} | ${SEDCMD} "s/|/|${V_VERSION}|/3"`;
-elif [[ `${ECHOCMD} ${V_REPLACE} | ${GREPCMD} "dbfs" | ${WCCMD} -l` -gt 0 ]]
-then
-V_REPLACE=`${ECHOCMD} ${V_REPLACE} | ${SEDCMD} "s/|/|NA|/3"`;
-else
-V_REPLACE=`${ECHOCMD} ${V_REPLACE} | ${SEDCMD} "s/|/|${V_VERSION}|/3"`;
-fi;
-V_CRSV=`${ECHOCMD} ${V_CRSV} | ${SEDCMD} "s#${V_ORIGINAL}#${V_REPLACE}#g"`;
+                if [[ `echo ${V_REPLACE} | egrep "asm|database" | wc -l` -gt 0 ]]
+                then
+                        for v_host_inst in `echo ${V_RESOURCE} | sed 's/|/ /g' | sed 's/!!!//g'`
+                        do
+                                HOST_NAME=`echo ${v_host_inst} | sed 's/=/ /g' | sed "s/(//g;s/)//g" | awk '{print $1}'`;
+                                INST_NAME=`echo ${v_host_inst} | sed 's/=/ /g' | awk '{print $2}'`;
+                                V_REPLACE=`echo ${V_REPLACE}   | sed -e 's/'${HOST_NAME}'/'${HOST_NAME}' \('${INST_NAME}'\)/g'`;
+                        done;
+                elif [[ `echo ${V_REPLACE} | egrep "dbfs" | wc -l` -gt 0 ]]
+                then
+                        V_REPLACE=`echo ${V_REPLACE} | sed "s/|/|NA|/3"`;
 
-done;
-V_CRSV=`${ECHOCMD} ${V_CRSV} | ${SEDCMD} 's/!!!/\n/g'`;
+                else
+                        printf "";
+                fi;
+                V_CRSV=`echo ${V_CRSV} | sed "s#${V_ORIGINAL}#${V_REPLACE}#g"`;
 
-V_CRSP_COL_NAME='|NAME|TYPE|VERSION|STATE|TARGET|LAST_RESTART|INTERNAL_STATE|!!!';
-V_CRSP_COL_LINE='|----|----|-------|-----|------|------------|--------------|!!!';
+        done;
+        V_CRSV=`echo ${V_CRSV} | sed 's/!!!/\n/g'`;
 
-${PRINTFCMD} "\e[${HEADER_COLR}\n";
-${ECHOCMD} "######################################################################################################";
-${PRINTFCMD} "#######################################";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} " CRSSTAT OUTPUT ";
-${PRINTFCMD} "\e[${HEADER_COLR}";
-${PRINTFCMD} "###############################################\n";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} "DATE:\t${TODAY} ";
-${PRINTFCMD} "\e[${HEADER_COLR} \n";
-${ECHOCMD} "######################################################################################################";
-${PRINTFCMD} "\e[${TAB_HEAD_COLR}";
-${PRINTFCMD} "COLOR CODES:";
-${PRINTFCMD} "\e[${HEADER_COLR}";
-${PRINTFCMD} " \e[${TAB_HEAD_COLR}HEADER\e[${HEADER_COLR} ";
-${PRINTFCMD} " \e[${TAB_TEXT_COLR}CONTENT\e[${TAB_TEXT_COLR} ";
-${PRINTFCMD} " \e[${ALRT_COLR}ALERT\e[${ALRT_COLR} ";
-${PRINTFCMD} " \e[${DB_INST_COLR}ORACLE_SID\e[${TRAILER_COLR} \n";
-${ECHOCMD} "######################################################################################################";
-V_CRSV=`${PRINTFCMD} "\e[${TAB_HEAD_COLR} ${V_CRSP_COL_NAME} ${V_CRSP_COL_LINE} \e[${TAB_TEXT_COLR} ${V_CRSV}"`;
-${ECHOCMD} ${V_CRSV} | \
-${SEDCMD} 's/|--/\n|--/1' | \
-${SEDCMD} 's/|NAME/\n|NAME/g' | \
-${SEDCMD} 's/|STATE/| | | |\n| | | |STATE/2g' | \
-${SEDCMD} -e "s/NAME=//g;s/TYPE=//g;s/TARGET=//g;s/LAST_RESTART=//g;s/INTERNAL_STATE=//g;s/STATE=//g;s/VERSION=//g" | \
-${SEDCMD} 's/!!!//g' | \
-${COLUMNCMD} -s"|" -t | \
-${SEDCMD} ''/OFFLINE/s//`${PRINTFCMD} "\e[${ALRT_COLR}OFFLINE\e[${TAB_TEXT_COLR}"`/g'' | \
-${SEDCMD} ''/INTERMEDIATE/s//`${PRINTFCMD} "\e[${ALRT_COLR}INTERMEDIATE\e[${TAB_TEXT_COLR}"`/g'' | \
-${SEDCMD} ''/UNKNOWN/s//`${PRINTFCMD} "\e[${ALRT_COLR}UNKNOWN\e[${TAB_TEXT_COLR}"`/g'' | \
-${SEDCMD} ''/\(/s//`${PRINTFCMD} "\e[${DB_INST_COLR}\("`/g'' | \
-${SEDCMD} ''/\)/s//`${PRINTFCMD} "\)\e[${TAB_TEXT_COLR}"`/g'' | \
-${SEDCMD} -e 's/ \+$/ /g';
+        V_CRSP_COL_NAME='|NAME|TYPE|STATE|TARGET|LAST_RESTART|INTERNAL_STATE|!!!';
+        V_CRSP_COL_LINE='|----|----|-----|------|------------|--------------|!!!';
 
-${PRINTFCMD} "\e[${TRAILER_COLR}\n";
-${PRINTFCMD} "############################"######;
-${PRINTFCMD} " \e[${TAB_HEAD_COLR}SERVICE STATUS \e[${HEADER_COLR}### \e[${ALRT_COLR} CHECK ALERTS\e[${TRAILER_COLR} ";
-${PRINTFCMD} "###################################";
-${PRINTFCMD} " \e[${TAB_TEXT_COLR}\n";
-service_chk;
+        printf "\e[${HEADER_COLR}\n";
+        echo "######################################################################################################";
+        printf "#######################################";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf " CRSSTAT OUTPUT ";
+        printf "\e[${HEADER_COLR}";
+        printf "###############################################\n";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf "DATE:\t${TODAY} ";
+        printf "\e[${HEADER_COLR} \n";
+        echo "######################################################################################################";
+        printf "\e[${TAB_HEAD_COLR}";
+        printf "COLOR CODES:";
+        printf "\e[${HEADER_COLR}";
+        printf " \e[${TAB_HEAD_COLR}HEADER\e[${HEADER_COLR} ";
+        printf " \e[${TAB_TEXT_COLR}CONTENT\e[${TAB_TEXT_COLR} ";
+        printf " \e[${ALRT_COLR}ALERT\e[${ALRT_COLR} ";
+        printf " \e[${DB_INST_COLR}ORACLE_SID\e[${TRAILER_COLR} \n";
+        echo "######################################################################################################";
+        V_CRSV=`printf  "\e[${TAB_HEAD_COLR} ${V_CRSP_COL_NAME} ${V_CRSP_COL_LINE} \e[${TAB_TEXT_COLR} ${V_CRSV}"`;
+        echo ${V_CRSV} |\
+        sed 's/|--/\n|--/1' |\
+        sed 's/|NAME/\n|NAME/g' |\
+        sed 's/|STATE/| | | |\n| | |STATE/2g' |\
+        sed -e "s/NAME=//g;s/TYPE=//g;s/TARGET=//g;s/LAST_RESTART=//g;s/INTERNAL_STATE=//g;s/STATE=//g;s/VERSION=//g" |\
+        sed 's/!!!//g' |\
+        column -s"|" -t |\
+        sed ''/OFFLINE/s//`printf "\e[${ALRT_COLR}OFFLINE\e[${TAB_TEXT_COLR}"`/g'' |\
+        sed ''/INTERMEDIATE/s//`printf "\e[${ALRT_COLR}INTERMEDIATE\e[${TAB_TEXT_COLR}"`/g'' |\
+        sed ''/UNKNOWN/s//`printf "\e[${ALRT_COLR}UNKNOWN\e[${TAB_TEXT_COLR}"`/g'' |\
+        sed ''/\(/s//`printf "\e[${DB_INST_COLR}\("`/g'' |\
+        sed ''/\)/s//`printf "\)\e[${TAB_TEXT_COLR}"`/g'' |\
+        sed -e 's/ \+$/ /g';
+
+        printf "\e[${TRAILER_COLR}\n";
+        printf "###################################";
+        printf " \e[${TAB_HEAD_COLR}SERVICE STATUS \e[${HEADER_COLR}### \e[${ALRT_COLR} CHECK ALERTS\e[${TRAILER_COLR} ";
+        printf "###################################";
+        printf " \e[${TAB_TEXT_COLR}\n";
+        service_chk;
 
 
-${PRINTFCMD} "\e[${TRAILER_COLR}\n";
-${ECHOCMD} "######################################################################################################";
-${ECHOCMD} "######################################################################################################";
+        printf "\e[${TRAILER_COLR}\n";
+        echo "######################################################################################################";
+        echo "######################################################################################################";
 
-${PRINTFCMD} "\e[${SHELL_PROMPT_COLR}";
+        printf "\e[${SHELL_PROMPT_COLR}";
 fi;
 
 }
@@ -312,85 +298,83 @@ fi;
 service_chk()
 {
 
-V_SERVICE_CONFIG='';
-V_SERVICE_STATUS='';
-V_SERVICES='';
-V_DATABASE_RESOURCE=`${GRID_HOME}/bin/crsctl status resource -p | \
-${GREPCMD} "^NAME|^ORACLE_HOME" | \
-${GREPCMD} "\.db|^ORACLE_HOME=" | \
-${GREPCMD} -v "\%" | \
-${SEDCMD} "s/^.*=//g;s/ora\.//g;s/\.db//g" | \
-${SEDCMD} '$!N;s/\n/::/'`;
+        V_SERVICE_CONFIG='';
+        V_SERVICE_STATUS='';
+        V_SERVICES='';
+        V_DATABASE_RESOURCE=`${GRID_HOME}/bin/crsctl status resource -p |\
+                               egrep "^NAME|^ORACLE_HOME" |\
+                               egrep "\.db|^ORACLE_HOME=" |\
+                               egrep -v "\%" |\
+                               sed "s/^.*=//g;s/ora\.//g;s/\.db//g" |\
+                               sed '$!N;s/\n/::/'`;
 
-for db_data in `${ECHOCMD} ${V_DATABASE_RESOURCE}`
-do
-db_name=`${PRINTFCMD} "${db_data}" | ${AWKCMD} -F"::" '{ print $1}'`;
-db_home=`${PRINTFCMD} "${db_data}" | ${AWKCMD} -F"::" '{ print $2}'`;
-#${PRINTFCMD} "Database = ${db_name} \n";
-#${PRINTFCMD} "Database Home = ${db_home}\n";
+        for db_data in `echo ${V_DATABASE_RESOURCE}`
+        do
+                db_name=`printf "${db_data}" | awk -F"::" '{ print $1}'`;
+                db_home=`printf "${db_data}" | awk -F"::" '{ print $2}'`;
 
 
-V_SERVICE_CONFIG=`${db_home}/bin/srvctl config service -d ${db_name} | \
-${GREPCMD} "Service name|Service is enabled|TAF policy specification|Preferred|Available|Pluggable database name" | \
-${SEDCMD} -e :a -e '$!N; s/\n/|/; ta' | \
-${SEDCMD} 's/|Service name/\nService name/g' | \
-${SEDCMD} -e "s/|/|${db_name}|/1" | \
-${SEDCMD} -e "s/Service name: //g;s/Service is //g;s/TAF policy specification: //g;s/Preferred instances: //g;s/Available instances: //g; s/Pluggable database name: //g"`;
+                V_SERVICE_CONFIG=`${db_home}/bin/srvctl config service -db ${db_name} |\
+                                egrep "Service name|Service is enabled|TAF policy specification|Preferred|Available|Pluggable database name" |\
+                                sed -e :a -e '$!N; s/\n/|/; ta' |\
+                                sed 's/|Service name/\nService name/g' |\
+                                sed -e "s/|/|${db_name}|/1" |\
+                                sed -e "s/Service name: //g;s/Service is //g;s/TAF policy specification: //g;s/Preferred instances: //g;s/Available instances: //g; s/Pluggable database name: /PDB_CHECK/g"`;
 
-for srv in `${ECHOCMD} ${V_SERVICE_CONFIG}`
-do
+                for srv in `echo ${V_SERVICE_CONFIG}`
+                do
 
-V_SERVICE=`${PRINTFCMD} "${srv}" | ${AWKCMD} -F"|" '{ print $1}'`;
-#${PRINTFCMD} "V_SERVICE=${V_SERVICE} \n\n";
+                        V_SERVICE=`printf "${srv}" | awk -F"|" '{ print $1}'`;
 
-V_ACTIVE_ON=`${db_home}/bin/srvctl status service -d ${db_name} -s ${V_SERVICE} | \
-${SEDCMD} -e "s/Service //g;s/ is running on instance(s) /|/g" | \
-${AWKCMD} -F"|" '{print $2}'`;
+                        V_ACTIVE_ON=`${db_home}/bin/srvctl status service -d ${db_name} -s ${V_SERVICE} |\
+                        sed -e "s/Service //g;s/ is running on instance(s) /|/g" |\
+                        awk -F"|" '{print $2}'`;
 
-V_ON_PREFFERED=`${PRINTFCMD} "${srv}|${V_ACTIVE_ON}" | ${AWKCMD} -F"|" '{print $(NF-2)}'`;
-V_ON_AVAILABLE=`${PRINTFCMD} "${srv}|${V_ACTIVE_ON}" | ${AWKCMD} -F"|" '{print $(NF)}'`;
+                        V_ON_PREFFERED=`printf "${srv}|${V_ACTIVE_ON}" | awk -F"|" '{print $(NF-2)}'`;
+                        V_ON_AVAILABLE=`printf "${srv}|${V_ACTIVE_ON}" | awk -F"|" '{print $(NF)}'`;
 
-srv="${srv}|${V_ON_AVAILABLE}";
-srv=`${PRINTFCMD} "${srv}" | ${SEDCMD} 's/|$/|Not-Started|/g'`;
-srv=`${PRINTFCMD} "${srv}" | ${SEDCMD} 's/||/|Not-Setup|/g'`;
-srv=`${PRINTFCMD} "${srv}" | ${AWKCMD} -F'|' '$5 ~ /Not-Setup/ { OFS= "|"; $5 = "NA"; }1'`;
-
-
-if [[ `${PRINTFCMD} "${srv}" | ${AWKCMD} -F '|' '{print NF-1}'` -eq 6 ]]
-then
-srv=`${PRINTFCMD} "${srv}" | ${SEDCMD} -e "s/|/|NA|/4"`;
-
-fi;
-
-if [[ ${V_ON_PREFFERED} != ${V_ON_AVAILABLE} && "x${V_ON_AVAILABLE}" != "x" ]]
-then
-
-srv=`${ECHOCMD} ${srv} | ${SEDCMD} 's/'${V_ON_AVAILABLE}'/BBB'${V_ON_AVAILABLE}'EEE/2'`;
-
-fi;
-
-V_SERVICES="${V_SERVICES}|||${srv}::";
-
-done;
-
-done;
+                        srv="${srv}|${V_ON_AVAILABLE}";
+                        srv=`printf "${srv}" | sed 's/|$/|Not-Started|/g'`;
+                        srv=`printf "${srv}" | sed 's/||/|Not-Setup|/g'`;
+                        srv=`printf "${srv}" | awk -F'|' '$5 ~ /Not-Setup/ { OFS= "|"; $5 = "NA"; }1'`;
 
 
-V_CRSP_COL_NAME='|SERVICE_NAME|DATABASE|STATE|TAF_POLICY|PDB|PREFFERED_INSTANCE|AVAILABLE_INSTANCE|ACTIVE_ON|::';
-V_CRSP_COL_LINE='|------------|--------|-----|----------|---|------------------|------------------|---------|::';
+                        if [[ `printf "${srv}" | awk -F '|' '{print NF-1}'` -eq 6 ]]
+                        then
+                                srv=`printf "${srv}" | sed -e "s/|/|NA|/4"`;
 
-V_SRV_ALRT=`${PRINTFCMD} "\e[${TAB_HEAD_COLR} \n${V_CRSP_COL_NAME} \n${V_CRSP_COL_LINE} \e[${TAB_TEXT_COLR} \n${V_SERVICES}"`;
+                        fi;
+
+                        if [[ ${V_ON_PREFFERED} != ${V_ON_AVAILABLE} && "x${V_ON_AVAILABLE}" != "x" ]]
+                        then
+
+                                srv=`echo ${srv} | sed 's/'${V_ON_AVAILABLE}'/BBB'${V_ON_AVAILABLE}'EEE/2'`;
+
+                        fi;
+
+                        V_SERVICES="${V_SERVICES}|${srv}::";
+
+                done;
+
+        done;
 
 
-${ECHOCMD} "${V_SRV_ALRT}" | \
-${SEDCMD} 's/::/\n/g' | \
-${SEDCMD} '/^$/d' | \
-${COLUMNCMD} -s"|" -t | \
-${SEDCMD} ''/BBB/s//`${PRINTFCMD} "\e[${ALRT_COLR}"`/g'' | \
-${SEDCMD} ''/EEE/s//`${PRINTFCMD} "\e[${TAB_TEXT_COLR}"`/g'' | \
-${SEDCMD} ''/Not-Started/s//`${PRINTFCMD} "\e[${ALRT_COLR}Not-Started\e[${TAB_TEXT_COLR}"`/g'' | \
-${SEDCMD} ''/Not-Setup/s//`${PRINTFCMD} "\e[${ALRT_COLR}Not-Setup\e[${TAB_TEXT_COLR}"`/g'' | \
-${SEDCMD} ''/NONE/s//`${PRINTFCMD} "\e[${ALRT_COLR}NONE\e[${TAB_TEXT_COLR}"`/g'';
+        V_CRSP_COL_NAME='|SERVICE_NAME|DATABASE|TAF_POLICY|PDB|STATE|PREFFERED_INSTANCE|AVAILABLE_INSTANCE|ACTIVE_ON|::';
+        V_CRSP_COL_LINE='|------------|--------|----------|---|-----|------------------|------------------|---------|::';
+
+        V_SRV_ALRT=`printf  "\e[${TAB_HEAD_COLR} \n${V_CRSP_COL_NAME} \n${V_CRSP_COL_LINE} \e[${TAB_TEXT_COLR} \n${V_SERVICES}"`;
+
+        echo "${V_SRV_ALRT}" |\
+                sed 's/::/\n/g' |\
+                sed '/^$/d' |\
+                sed 's/PDB_CHECK|/cdb|/g'|\
+                sed 's/PDB_CHECK//g'|\
+                column -s"|" -t |\
+                sed ''/BBB/s//`printf "\e[${ALRT_COLR}"`/g'' |\
+                sed ''/EEE/s//`printf "\e[${TAB_TEXT_COLR}"`/g'' |\
+                sed ''/Not-Started/s//`printf "\e[${ALRT_COLR}Not-Started\e[${TAB_TEXT_COLR}"`/g'' |\
+                sed ''/Not-Setup/s//`printf "\e[${ALRT_COLR}Not-Setup\e[${TAB_TEXT_COLR}"`/g'' |\
+                sed ''/NONE/s//`printf "\e[${ALRT_COLR}NONE\e[${TAB_TEXT_COLR}"`/g'';
 
 
 }
