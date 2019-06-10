@@ -1,9 +1,9 @@
-Source: 
+**Source:**
 
-Oracle RAC - Simplifying Viewing your CRS Stats - crsstat (Sudhakar Kotagiri)
+Oracle RAC - Simplifying Viewing your CRS Stats - crsstat (Sudhakar Kotagiri) \
 https://sudhakarkotagiri.blogspot.com/2018/08/oracle-rac-simplifying-viewing-your-crs.html
 
-Setup: 
+**Setup:**
 
 Keeping it simple below are the set of steps to get going.
 
